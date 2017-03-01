@@ -1,5 +1,6 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/stitching.hpp>
 #include <iostream>
 #include <fstream>
 #include "opencv2/imgproc/imgproc.hpp"
@@ -10,14 +11,15 @@
 #include <ctime>
 #include <iostream>
 #include <string>
+#include "rl.h"
 
 using namespace std;
 using namespace cv;
 
 HWND hwnd;
 int counter = 0;
-double height_val = 0.22;
-double ceiling_val = 0.67;
+double height_val = 0.3;
+double ceiling_val = 0.6;
 
 Scalar bad_color = Scalar(255, 255, 255);
 Scalar worse_color = Scalar(0, 130, 255);
@@ -30,6 +32,8 @@ cv::Rect myROI;
 
 std::clock_t clock_var = std::clock();
 int lastHitDirection;
+RL rl;
+
 
 void hit(int direction, Mat img)
 {
@@ -93,19 +97,28 @@ Mat processImg(Mat img) {
 	Mat drawing = Mat::zeros(canny_output.size(), CV_8UC3);
 	for (int i = 0; i< contours.size(); i++)
 	{
+		//if distance to previous less than 25px, then it's the same guy, so merge them.
 		approxPolyDP(Mat(contours[i]), contours_poly, 3, true);
 		drawContours(drawing, contours, i, bad_color, 2, 8, hierarchy, 0, Point());
 		Rect boundRect = boundingRect(Mat(contours_poly));
 		if (boundRect.x > 0 && boundRect.y > 0
 			&& boundRect.height > 40 && boundRect.height < 75
-			&& boundRect.width > 25 && boundRect.width < 65
+			&& boundRect.width >= 20 && boundRect.width < 65
 			&& boundRect.width * boundRect.height > 1000) { //do a better check for 'isBad'
-			rectangle(drawing, boundRect.tl(), boundRect.br(), bad_color, 2, 8, 0);
+			//rectangle(drawing, boundRect.tl(), boundRect.br(), bad_color, 2, 8, 0);
 			rectangle(img, Point(boundRect.x, boundRect.y + crop_y), Point(boundRect.x + boundRect.width, boundRect.y + crop_y + boundRect.height), bad_color, 2, 8, 0);
 			badGuys.push_back(boundRect);
-			Moments m = moments(contours[i], false);
+		/*	Moments m = moments(contours[i], false);
 			badGuysCenters.push_back(Point2f(m.m10 / m.m00, m.m01 / m.m00));
-			circle(drawing, Point2f(m.m10 / m.m00, m.m01 / m.m00), 5, good_color, 5);
+			circle(drawing, Point2f(m.m10 / m.m00, m.m01 / m.m00), 5, good_color, 5);*/
+		}
+		else { //do a better check for 'isBad'
+			//rectangle(drawing, boundRect.tl(), boundRect.br(), worse_color, 2, 8, 0);
+			rectangle(img, Point(boundRect.x, boundRect.y + crop_y), Point(boundRect.x + boundRect.width, boundRect.y + crop_y + boundRect.height), worse_color, 2, 8, 0);
+			badGuys.push_back(boundRect);
+			/*Moments m = moments(contours[i], false);
+			badGuysCenters.push_back(Point2f(m.m10 / m.m00, m.m01 / m.m00));
+			circle(drawing, Point2f(m.m10 / m.m00, m.m01 / m.m00), 5, good_color, 5);*/
 		}
 	}
 
@@ -138,18 +151,22 @@ Mat processImg(Mat img) {
 			minBadGuy = badGuys[i];
 		}
 	}
-	if (minDist < 100) {
-		rectangle(drawing, minBadGuy.tl(), minBadGuy.br(), worst_color, 12, 8, 0);
-		rectangle(img, Point(minBadGuy.x, minBadGuy.y + crop_y), Point(minBadGuy.x + minBadGuy.width, minBadGuy.y + crop_y + minBadGuy.height), worst_color, 12, 8, 0);
-	}
-	else if (minDist < 250) {
-		rectangle(drawing, minBadGuy.tl(), minBadGuy.br(), worse_color, 8, 8, 0);
-		rectangle(img, Point(minBadGuy.x, minBadGuy.y + crop_y), Point(minBadGuy.x + minBadGuy.width, minBadGuy.y + crop_y + minBadGuy.height), worse_color, 8, 8, 0);
-	}
+	//if (minDist < 100) {
+	//	rectangle(drawing, minBadGuy.tl(), minBadGuy.br(), worst_color, 12, 8, 0);
+	//	rectangle(img, Point(minBadGuy.x, minBadGuy.y + crop_y), Point(minBadGuy.x + minBadGuy.width, minBadGuy.y + crop_y + minBadGuy.height), worst_color, 12, 8, 0);
+	//}
+	//else if (minDist < 250) {
+	//	rectangle(drawing, minBadGuy.tl(), minBadGuy.br(), worse_color, 8, 8, 0);
+	//	rectangle(img, Point(minBadGuy.x, minBadGuy.y + crop_y), Point(minBadGuy.x + minBadGuy.width, minBadGuy.y + crop_y + minBadGuy.height), worse_color, 8, 8, 0);
+	//}
 
 
 	if (minDist < 100) {
-		hit(goodGuy.x - minBadGuy.x, img);
+		//hit(goodGuy.x - minBadGuy.x, img); //not used, because the AI decides how to act now
+
+		string state = ""; //calculate state according to the bad guys and good guy distances
+		string action = rl.getAction(state);
+
 
 		/*OutputDebugString(L"Hit: ");
 		OutputDebugString(L"x: ");
@@ -161,15 +178,22 @@ Mat processImg(Mat img) {
 		OutputDebugString(L", h: ");
 		OutputDebugString(to_wstring(minBadGuy.height).c_str());
 		OutputDebugString(L", a: ");
-		OutputDebugString(to_wstring(minBadGuy.height * minBadGuy.width).c_str());
+		OutputDebugString(to_wstring(minBadGuy.height * minBadGuy.width).c_str());	
 		OutputDebugString(L", dist:");
 		OutputDebugString(to_wstring(abs(goodGuy.x + goodGuy.width / 2 - minBadGuy.x - minBadGuy.width / 2)).c_str());
 		OutputDebugString(L"\r\n");*/
 	}
+	cvtColor(img, img, CV_RGBA2RGB);
+	Mat res(Size(img.cols, drawing.rows + img.rows), CV_8UC3);
+	Mat roi1 = res(Rect(0, 0, img.cols, img.rows));
+	Mat roi2 = res(Rect(0, img.rows, drawing.cols, drawing.rows));
+	int a = img.channels();
+	img.copyTo(roi1);
+	drawing.copyTo(roi2);
 
-	imwrite("C:\\Users\\E\\Desktop\\asd\\asd_" + to_string(counter++) + ".jpg", img);
-	imshow("Orig", img);
-	imshow("Contours", drawing);
+	imwrite("C:\\Users\\Elian\\Desktop\\asd\\asd_" + to_string(counter++) + ".jpg", res);
+
+	imshow("Orig", res);
 
 	return drawing;
 }
@@ -177,8 +201,6 @@ Mat processImg(Mat img) {
 void hwnd2mat() {
 	startWindowThread();
 	namedWindow("Orig", WINDOW_AUTOSIZE);
-	startWindowThread();
-	namedWindow("Contours", CV_WINDOW_AUTOSIZE);
 
 	HDC hwindowDC, hwindowCompatibleDC;
 
@@ -235,6 +257,7 @@ void hwnd2mat() {
 
 int main(int argc, char** argv)
 {
+	rl.init();
 	hwnd = FindWindow(L"Qt5QWindowIcon", L"KOPLAYER 1.4.1055");
 	ShowWindow(hwnd, SW_SHOW);
 	SetForegroundWindow(hwnd);

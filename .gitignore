@@ -1,8 +1,11 @@
 *.tlog
-*vcxproj.user
+*.vcxproj*
+*.VC.db
+*.suo
 *.lastbuildstate
 *.idb
 *.pdb
 *.obj
 *.ilk
 *.exe
+*.log
