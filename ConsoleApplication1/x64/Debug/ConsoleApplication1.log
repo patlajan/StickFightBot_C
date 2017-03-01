@@ -1,0 +1,10 @@
+﻿  main.cpp
+c:\users\e\documents\visual studio 2015\projects\consoleapplication1\consoleapplication1\main.cpp(104): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\e\documents\visual studio 2015\projects\consoleapplication1\consoleapplication1\main.cpp(107): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\e\documents\visual studio 2015\projects\consoleapplication1\consoleapplication1\main.cpp(108): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\e\documents\visual studio 2015\projects\consoleapplication1\consoleapplication1\main.cpp(126): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\e\documents\visual studio 2015\projects\consoleapplication1\consoleapplication1\main.cpp(143): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\e\documents\visual studio 2015\projects\consoleapplication1\consoleapplication1\main.cpp(147): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+c:\users\e\documents\visual studio 2015\projects\consoleapplication1\consoleapplication1\main.cpp(203): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+  ConsoleApplication1.vcxproj -> C:\Users\E\Documents\Visual Studio 2015\Projects\ConsoleApplication1\x64\Debug\ConsoleApplication1.exe
+  ConsoleApplication1.vcxproj -> C:\Users\E\Documents\Visual Studio 2015\Projects\ConsoleApplication1\x64\Debug\ConsoleApplication1.pdb (Full PDB)
