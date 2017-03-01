@@ -1,0 +1,8 @@
+*.tlog
+*vcxproj.user
+*.lastbuildstate
+*.idb
+*.pdb
+*.obj
+*.ilk
+*.exe
