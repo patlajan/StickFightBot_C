@@ -33,7 +33,7 @@ namespace ConsoleApplication3
 
         IList<string> GetPossibleActions()
         {
-            return new string[3] { "hitRight", "hitLeft", "wait" };
+            return new string[3] { "{RIGHT}", "{LEFT}", "wait" };
         }
 
         string GetRandomAction()

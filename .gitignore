@@ -3,10 +3,11 @@
 *.VC.db
 *.VC.opendb
 *.lastbuildstate
-*obj/Debug*
-*obj\Debug*
-*x64/Debug*
-*x64\Debug*
+*.cache
+bin/
+obj/
+Debug/
+Release/
 *.dll
 *.idb
 *.pdb

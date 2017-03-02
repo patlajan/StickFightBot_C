@@ -11,7 +11,6 @@
 #include <ctime>
 #include <iostream>
 #include <string>
-#include "rl.h"
 
 using namespace std;
 using namespace cv;
@@ -28,6 +27,8 @@ double crop_y;
 double crop_height;
 cv::Rect myROI;
 
+vector<Rect> result;
+
 Mat processImg(Mat img) {
 	int thresh = 100;
 	Mat img2;
@@ -36,7 +37,7 @@ Mat processImg(Mat img) {
 	vector<Vec4i> hierarchy;
 
 	Mat cropImg = img(myROI);
-
+	
 	inRange(cropImg, cv::Scalar(250, 250, 250), cv::Scalar(255, 255, 255), img2);
 
 	/// Detect edges using canny
@@ -105,6 +106,9 @@ Mat processImg(Mat img) {
 		}
 	}
 
+	result = badGuys;
+	result.push_back(goodGuy);
+
 	cvtColor(img, img, CV_RGBA2RGB);
 	Mat res(Size(img.cols, drawing.rows + img.rows), CV_8UC3);
 	Mat roi1 = res(Rect(0, 0, img.cols, img.rows));
@@ -113,11 +117,7 @@ Mat processImg(Mat img) {
 	img.copyTo(roi1);
 	drawing.copyTo(roi2);
 
-	//imwrite("C:\\Users\\Elian\\Desktop\\asd\\asd_" + to_string(counter++) + ".jpg", res);
-
-	imshow("Orig", res);
-
-	return drawing;
+	return res;
 }
 
 HDC hwindowDC, hwindowCompatibleDC;
@@ -138,6 +138,7 @@ extern "C" __declspec(dllexport) void init() {
 	ShowWindow(hwnd, SW_SHOW);
 	SetForegroundWindow(hwnd);
 	SetFocus(hwnd);
+	SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 800, 500, SWP_SHOWWINDOW);
 
 	startWindowThread();
 	namedWindow("Orig", WINDOW_AUTOSIZE);
@@ -176,13 +177,56 @@ extern "C" __declspec(dllexport) void init() {
 }
 
 
-extern "C" __declspec(dllexport) void getNext() {
+extern "C" __declspec(dllexport) int* getNext(int* len) {
+	//std::clock_t start = std::clock();
+
 	SelectObject(hwindowCompatibleDC, hbwindow);
 	StretchBlt(hwindowCompatibleDC, 0, 0, width, height, hwindowDC, 0, 0, width, height, SRCCOPY); //change SRCCOPY to NOTSRCCOPY for wacky colors !
 	GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, src.data, (BITMAPINFO *)&bi, DIB_RGB_COLORS);  //copy from hwindowCompatibleDC to hbwindow
 
 	Mat res = processImg(src);
+
+
+	imshow("Orig", res);
+
+	Vec3b intensity1 = res.at<Vec3b>(60, 30);
+	Vec3b intensity2 = res.at<Vec3b>(402, 678);
+
+	//std::cout << "printf: " << (std::clock() - start) << '\n';
+
 	waitKey(1);
 
-	//return res;
+
+	*len = result.size() * 4 + 1;
+
+	int* arr = new int[*len];
+
+	//TODO: this check is not good enough, make it more complex;
+	if(intensity1[0] > 235)
+		arr[0] = 1;//mis hit
+	else if(intensity2[0] > 240)
+		arr[0] = 0;//normal play
+	else
+		arr[0] = 2;//dead
+
+	imwrite("C:\\Users\\Elian\\Desktop\\asd\\asd_" + to_string(counter++) + "_" + to_string(arr[0]) + ".jpg", res);
+	int c = 1;
+	for (unsigned i = 0; i < result.size(); i++) {
+		arr[c++] = result[i].x;
+		arr[c++] = result[i].y;
+		arr[c++] = result[i].width;
+		arr[c++] = result[i].height;
+	}
+
+	return arr;
+}
+
+
+int main(int argc, char** argv)
+{
+	init();
+	int a;
+	while(true)
+		getNext(&a);
+	destroy();
 }

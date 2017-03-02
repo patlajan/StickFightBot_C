@@ -3,9 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsoleApplication1", "ConsoleApplication1\ConsoleApplication1.vcxproj", "{B57ED349-4AFD-407D-AD93-28EE4B6DCECF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StickFightCV", "StickFightCV\StickFightCV.vcxproj", "{B57ED349-4AFD-407D-AD93-28EE4B6DCECF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApplication3", "ConsoleApplication3\ConsoleApplication3.csproj", "{C272B72E-3E38-47FE-929F-DD5906DFDD67}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StickFightMain", "StickfiGhtmain\StickFightMain.csproj", "{C272B72E-3E38-47FE-929F-DD5906DFDD67}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B57ED349-4AFD-407D-AD93-28EE4B6DCECF} = {B57ED349-4AFD-407D-AD93-28EE4B6DCECF}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
