@@ -22,58 +22,11 @@ double height_val = 0.3;
 double ceiling_val = 0.6;
 
 Scalar bad_color = Scalar(255, 255, 255);
-Scalar worse_color = Scalar(0, 130, 255);
-Scalar worst_color = Scalar(0, 0, 255);
 Scalar good_color = Scalar(55, 118, 244);
 
 double crop_y;
 double crop_height;
 cv::Rect myROI;
-
-std::clock_t clock_var = std::clock();
-int lastHitDirection;
-RL rl;
-
-
-void hit(int direction, Mat img)
-{
-	if (std::clock() - clock_var < 100 && (lastHitDirection > 0 && direction > 0 || lastHitDirection < 0 && direction < 0))
-		return;
-
-	lastHitDirection = direction;
-	clock_var = std::clock();
-
-	if (direction < 0) {
-		INPUT input;
-		WORD vkey = VK_RIGHT; // see link below
-		input.type = INPUT_KEYBOARD;
-		input.ki.wScan = MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
-		input.ki.time = 0;
-		input.ki.dwExtraInfo = 0;
-		input.ki.wVk = vkey;
-		input.ki.dwFlags = 0; // there is no KEYEVENTF_KEYDOWN
-		SendInput(1, &input, sizeof(INPUT));
-
-		input.ki.dwFlags = KEYEVENTF_KEYUP;
-		SendInput(1, &input, sizeof(INPUT));
-		rectangle(img, cv::Point(0, 0), cv::Point(30, 30), bad_color, 16);
-	}
-	else {
-		INPUT input;
-		WORD vkey = VK_LEFT; // see link below
-		input.type = INPUT_KEYBOARD;
-		input.ki.wScan = MapVirtualKey(vkey, MAPVK_VK_TO_VSC);
-		input.ki.time = 0;
-		input.ki.dwExtraInfo = 0;
-		input.ki.wVk = vkey;
-		input.ki.dwFlags = 0; // there is no KEYEVENTF_KEYDOWN
-		SendInput(1, &input, sizeof(INPUT));
-
-		input.ki.dwFlags = KEYEVENTF_KEYUP;
-		SendInput(1, &input, sizeof(INPUT));
-		rectangle(img, cv::Point(250, 0), cv::Point(280, 30), good_color, 16);
-	}
-}
 
 Mat processImg(Mat img) {
 	int thresh = 100;
@@ -105,16 +58,16 @@ Mat processImg(Mat img) {
 			&& boundRect.height > 40 && boundRect.height < 75
 			&& boundRect.width >= 20 && boundRect.width < 65
 			&& boundRect.width * boundRect.height > 1000) { //do a better check for 'isBad'
-			//rectangle(drawing, boundRect.tl(), boundRect.br(), bad_color, 2, 8, 0);
+															//rectangle(drawing, boundRect.tl(), boundRect.br(), bad_color, 2, 8, 0);
 			rectangle(img, Point(boundRect.x, boundRect.y + crop_y), Point(boundRect.x + boundRect.width, boundRect.y + crop_y + boundRect.height), bad_color, 2, 8, 0);
 			badGuys.push_back(boundRect);
-		/*	Moments m = moments(contours[i], false);
+			/*	Moments m = moments(contours[i], false);
 			badGuysCenters.push_back(Point2f(m.m10 / m.m00, m.m01 / m.m00));
 			circle(drawing, Point2f(m.m10 / m.m00, m.m01 / m.m00), 5, good_color, 5);*/
 		}
 		else { //do a better check for 'isBad'
-			//rectangle(drawing, boundRect.tl(), boundRect.br(), worse_color, 2, 8, 0);
-			rectangle(img, Point(boundRect.x, boundRect.y + crop_y), Point(boundRect.x + boundRect.width, boundRect.y + crop_y + boundRect.height), worse_color, 2, 8, 0);
+			   //rectangle(drawing, boundRect.tl(), boundRect.br(), good_color, 2, 8, 0);
+			rectangle(img, Point(boundRect.x, boundRect.y + crop_y), Point(boundRect.x + boundRect.width, boundRect.y + crop_y + boundRect.height), good_color, 2, 8, 0);
 			badGuys.push_back(boundRect);
 			/*Moments m = moments(contours[i], false);
 			badGuysCenters.push_back(Point2f(m.m10 / m.m00, m.m01 / m.m00));
@@ -151,38 +104,7 @@ Mat processImg(Mat img) {
 			minBadGuy = badGuys[i];
 		}
 	}
-	//if (minDist < 100) {
-	//	rectangle(drawing, minBadGuy.tl(), minBadGuy.br(), worst_color, 12, 8, 0);
-	//	rectangle(img, Point(minBadGuy.x, minBadGuy.y + crop_y), Point(minBadGuy.x + minBadGuy.width, minBadGuy.y + crop_y + minBadGuy.height), worst_color, 12, 8, 0);
-	//}
-	//else if (minDist < 250) {
-	//	rectangle(drawing, minBadGuy.tl(), minBadGuy.br(), worse_color, 8, 8, 0);
-	//	rectangle(img, Point(minBadGuy.x, minBadGuy.y + crop_y), Point(minBadGuy.x + minBadGuy.width, minBadGuy.y + crop_y + minBadGuy.height), worse_color, 8, 8, 0);
-	//}
 
-
-	if (minDist < 100) {
-		//hit(goodGuy.x - minBadGuy.x, img); //not used, because the AI decides how to act now
-
-		string state = ""; //calculate state according to the bad guys and good guy distances
-		string action = rl.getAction(state);
-
-
-		/*OutputDebugString(L"Hit: ");
-		OutputDebugString(L"x: ");
-		OutputDebugString(to_wstring(minBadGuy.x).c_str());
-		OutputDebugString(L", y: ");
-		OutputDebugString(to_wstring(minBadGuy.y).c_str());
-		OutputDebugString(L", w: ");
-		OutputDebugString(to_wstring(minBadGuy.width).c_str());
-		OutputDebugString(L", h: ");
-		OutputDebugString(to_wstring(minBadGuy.height).c_str());
-		OutputDebugString(L", a: ");
-		OutputDebugString(to_wstring(minBadGuy.height * minBadGuy.width).c_str());	
-		OutputDebugString(L", dist:");
-		OutputDebugString(to_wstring(abs(goodGuy.x + goodGuy.width / 2 - minBadGuy.x - minBadGuy.width / 2)).c_str());
-		OutputDebugString(L"\r\n");*/
-	}
 	cvtColor(img, img, CV_RGBA2RGB);
 	Mat res(Size(img.cols, drawing.rows + img.rows), CV_8UC3);
 	Mat roi1 = res(Rect(0, 0, img.cols, img.rows));
@@ -191,23 +113,35 @@ Mat processImg(Mat img) {
 	img.copyTo(roi1);
 	drawing.copyTo(roi2);
 
-	imwrite("C:\\Users\\Elian\\Desktop\\asd\\asd_" + to_string(counter++) + ".jpg", res);
+	//imwrite("C:\\Users\\Elian\\Desktop\\asd\\asd_" + to_string(counter++) + ".jpg", res);
 
 	imshow("Orig", res);
 
 	return drawing;
 }
 
-void hwnd2mat() {
+HDC hwindowDC, hwindowCompatibleDC;
+
+int height, width, srcheight, srcwidth;
+HBITMAP hbwindow;
+Mat src;
+BITMAPINFOHEADER bi;
+
+extern "C" __declspec(dllexport) void destroy() {
+	DeleteObject(hbwindow);
+	DeleteDC(hwindowCompatibleDC);
+	ReleaseDC(hwnd, hwindowDC);
+}
+
+extern "C" __declspec(dllexport) void init() {
+	hwnd = FindWindow(L"Qt5QWindowIcon", L"KOPLAYER 1.4.1055");
+	ShowWindow(hwnd, SW_SHOW);
+	SetForegroundWindow(hwnd);
+	SetFocus(hwnd);
+
 	startWindowThread();
 	namedWindow("Orig", WINDOW_AUTOSIZE);
 
-	HDC hwindowDC, hwindowCompatibleDC;
-
-	int height, width, srcheight, srcwidth;
-	HBITMAP hbwindow;
-	Mat src;
-	BITMAPINFOHEADER bi;
 
 	hwindowDC = GetDC(hwnd);
 	hwindowCompatibleDC = CreateCompatibleDC(hwindowDC);
@@ -239,31 +173,16 @@ void hwnd2mat() {
 	bi.biYPelsPerMeter = 0;
 	bi.biClrUsed = 0;
 	bi.biClrImportant = 0;
-
-	int i = 1000;
-	while (i > 0) {
-		SelectObject(hwindowCompatibleDC, hbwindow);
-		StretchBlt(hwindowCompatibleDC, 0, 0, width, height, hwindowDC, 0, 0, width, height, SRCCOPY); //change SRCCOPY to NOTSRCCOPY for wacky colors !
-		GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, src.data, (BITMAPINFO *)&bi, DIB_RGB_COLORS);  //copy from hwindowCompatibleDC to hbwindow
-
-		processImg(src);
-		waitKey(1);
-	}
-
-	DeleteObject(hbwindow);
-	DeleteDC(hwindowCompatibleDC);
-	ReleaseDC(hwnd, hwindowDC);
 }
 
-int main(int argc, char** argv)
-{
-	rl.init();
-	hwnd = FindWindow(L"Qt5QWindowIcon", L"KOPLAYER 1.4.1055");
-	ShowWindow(hwnd, SW_SHOW);
-	SetForegroundWindow(hwnd);
-	SetFocus(hwnd);
 
-	hwnd2mat();
+extern "C" __declspec(dllexport) void getNext() {
+	SelectObject(hwindowCompatibleDC, hbwindow);
+	StretchBlt(hwindowCompatibleDC, 0, 0, width, height, hwindowDC, 0, 0, width, height, SRCCOPY); //change SRCCOPY to NOTSRCCOPY for wacky colors !
+	GetDIBits(hwindowCompatibleDC, hbwindow, 0, height, src.data, (BITMAPINFO *)&bi, DIB_RGB_COLORS);  //copy from hwindowCompatibleDC to hbwindow
 
-	return 0;
+	Mat res = processImg(src);
+	waitKey(1);
+
+	//return res;
 }
